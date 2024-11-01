@@ -1,35 +1,44 @@
 import { DevTool } from "@hookform/devtools";
 import axios from "axios";
-import React from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
 let count = 0;
 
+const schema = yup.object({
+  username: yup.string().required("Yup username is required"),
+  email: yup
+    .string()
+    .email("Invalid yup email")
+    .required("Yup email is required"),
+});
+
 export default function Form() {
   const form = useForm({
-    defaultValues: async () => {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users/1"
-      );
-      const data = response.data;
-      return {
-        username: data.username,
-        email: data.email,
-        social: {
-          facebook: "",
-          twitter: "",
-        },
-        contacts: ["", ""],
-        skills: [{ skillName: "" }],
-      };
+    defaultValues: {
+      username: "",
+      email: "",
     },
+    resolver: yupResolver(schema)
   });
-  const { register, control, handleSubmit, formState } = form;
-  const { errors } = formState;
-  const { fields, append, remove } = useFieldArray({
-    name: "skills",
-    control,
-  });
+  const { register, control, handleSubmit, formState, getValues, reset } = form;
+  const {
+    errors,
+    isDirty,
+    isValid,
+    isSubmitting,
+    isSubmitted,
+    isSubmitSuccessful,
+    submitCount,
+  } = formState;
+
+  useEffect(() => {
+    if (isSubmitSuccessful) {
+      reset();
+    }
+  }, [isSubmitSuccessful, reset]);
 
   count++;
 
@@ -37,6 +46,9 @@ export default function Form() {
     console.log(data);
   };
 
+  const handleGetValues = () => {
+    console.log(getValues());
+  };
   return (
     <div>
       <h1>Basic Form ({count / 2})</h1>
@@ -85,52 +97,25 @@ export default function Form() {
                     "This domain isn't supported"
                   );
                 },
+                emailAvailable: async (fieldValue) => {
+                  const response = await axios.get(
+                    `https://jsonplaceholder.typicode.com/users?email=${fieldValue}`
+                  );
+                  const data = response.data;
+                  return data.length === 0 || "Email already exists";
+                },
               },
             })}
           />
           <p className="error">{errors.email?.message}</p>
         </div>
 
-        <div className="form-control">
-          <label htmlFor="facebook">Facebook</label>
-          <input type="text" id="facebook" {...register("social.facebook")} />
-        </div>
-
-        <div className="form-control">
-          <label htmlFor="twitter">Facebook</label>
-          <input type="text" id="twitter" {...register("social.twitter")} />
-        </div>
-
-        <div className="form-control">
-          <label htmlFor="mobile-phone">Mobile No.</label>
-          <input type="text" id="mobile-phone" {...register("contacts[0]")} />
-        </div>
-
-        <div className="form-control">
-          <label htmlFor="other">Other Ph.</label>
-          <input type="text" id="other" {...register("contacts[1]")} />
-        </div>
-
-        <div>
-          <label>List of Skills</label>
-          <div>
-            {fields.map((field, index) => (
-              <div className="form-control" key={field.id}>
-                <input type="text" {...register(`skills.${index}.skillName`)} />
-                {index > 0 && (
-                  <button type="button" onClick={() => remove(index)}>
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-            <button type="button" onClick={() => append({ skill: "" })}>
-              Add Skill
-            </button>
-          </div>
-        </div>
-
-        <button>Submit</button>
+        <button type="submit" disabled={isSubmitting}>
+          Submit
+        </button>
+        <button type="button" onClick={handleGetValues}>
+          Get Values
+        </button>
         <DevTool control={control} />
       </form>
     </div>
