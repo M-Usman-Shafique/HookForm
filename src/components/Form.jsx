@@ -2,17 +2,17 @@ import { DevTool } from "@hookform/devtools";
 import axios from "axios";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 let count = 0;
 
-const schema = yup.object({
-  username: yup.string().required("Yup username is required"),
-  email: yup
+const schema = z.object({
+  username: z.string().nonempty("Zod username is required"),
+  email: z
     .string()
-    .email("Invalid yup email")
-    .required("Yup email is required"),
+    .email("Invalid zod email")
+    .nonempty("Zod email is required"),
 });
 
 export default function Form() {
@@ -21,7 +21,7 @@ export default function Form() {
       username: "",
       email: "",
     },
-    resolver: yupResolver(schema)
+    resolver: zodResolver(schema),
   });
   const { register, control, handleSubmit, formState, getValues, reset } = form;
   const {
